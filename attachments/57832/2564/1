@@ -1,0 +1,126 @@
+package com.acme;
+
+
+import java.io.IOException;
+
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.QueueConnection;
+import javax.jms.QueueConnectionFactory;
+import javax.jms.QueueSession;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+
+import javax.naming.InitialContext;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+/**
+ * Put a message received from the web onto a queue.
+ */
+public class MyQueueServlet extends HttpServlet {
+
+    
+    private QueueConnectionFactory connectionFactory;
+    private Queue myQueue;
+
+
+    public void init(ServletConfig config) throws ServletException
+    {
+        super.init(config);
+        try
+        {
+
+            InitialContext ic = new InitialContext();
+          System.err.println(ic.lookup("java:comp/env/jms/connectionFactory").getClass().getName());
+          Object o = ic.lookup("java:comp/env/jms/connectionFactory");
+          System.err.println("isQueueConnectionFactory:"+(o instanceof QueueConnectionFactory));
+          System.err.println("isConnectionFactory:"+(o instanceof ConnectionFactory));
+
+            connectionFactory = (QueueConnectionFactory)o;
+            myQueue = (Queue)ic.lookup("java:comp/env/jms/myQueue");
+        }
+        catch (Exception e)
+        {
+          e.printStackTrace();
+            throw new ServletException(e);
+        }
+    }
+
+    
+    
+    /* ------------------------------------------------------------ */
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    {
+        doGet(request, response);
+    }
+
+    /* ------------------------------------------------------------ */
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    {
+        try
+        {
+            String msg = request.getParameter("msg");
+
+            response.setContentType("text/html");
+            ServletOutputStream out = response.getOutputStream();
+            out.println("<html>");
+            out.println("<h1>Queue Test</h1>");
+            out.println("<body>");
+
+            try
+            {
+              sendMessage(msg);
+              out.println("<p>Message: "+msg+" sent.</p>");
+            }
+            catch (Exception e)
+            {
+              out.println("<p>Message: "+msg+" failed with error '"+e.getMessage()+"'");
+            }
+
+            out.flush();
+        }
+        catch (Exception e)
+        {
+            throw new ServletException(e);
+        }
+    }
+    
+
+    public void sendMessage(String msg)
+    throws Exception
+    {
+        QueueConnection connection = null;
+        QueueSession session = null;
+        MessageProducer producer = null;
+        try
+        {    
+          connection = connectionFactory.createQueueConnection();
+          session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+          producer = session.createProducer(myQueue);
+          TextMessage message = session.createTextMessage(msg);
+          producer.send(message);
+        }
+        finally
+        {
+          try
+          {
+            if (producer!=null)producer.close();
+            if (session!=null)session.close();
+            if (connection!=null)connection.close();
+          }
+          catch (Exception e)
+          {
+            e.printStackTrace();
+          }
+        }
+        
+    }
+    
+}

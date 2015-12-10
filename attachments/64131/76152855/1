@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Mort Bay Consulting//DTD Configure//EN" "http://jetty.mortbay.org/configure.dtd">
+
+
+<!-- =============================================================== -->
+<!-- Configuration file to set up the requirements of the JIRA app   -->
+<!-- =============================================================== -->
+<Configure id="Server" class="org.mortbay.jetty.Server">
+
+  <!-- =============================================================== -->
+  <!-- Configuring Transactions and XA Datasources                     -->
+  <!-- Uncomment EITHER the setup for Atomikos OR for Jotm             -->
+  <!-- =============================================================== -->
+  <!-- START OF ATOMIKOS
+  <Call class="java.lang.System" name="setProperty">
+    <Arg>com.atomikos.icatch.file</Arg>
+    <Arg><SystemProperty name="jetty.home" default="." />/resources/jta.properties</Arg>
+  </Call>
+  <New id="tx" class="org.mortbay.jetty.plus.naming.Transaction">
+   <Arg>
+     <New class="com.atomikos.icatch.jta.UserTransactionImp"/>
+   </Arg>
+  </New>
+
+
+   <New id="jira-ds" class="org.mortbay.jetty.plus.naming.Resource">
+      <Arg>jdbc/JiraDS</Arg>
+      <Arg>
+       <New class="com.atomikos.jdbc.nonxa.NonXADataSourceBean">
+         <Set name="Url">jdbc:hsqldb:./database/jiradb</Set>
+         <Set name="driverClassName">org.hsqldb.jdbcDriver</Set>
+         <Set name="user">sa</Set>
+       </New>
+      </Arg>
+    </New>
+  END OF ATOMIKOS -->
+
+  <!-- START OF JOTM  CONFIG
+  <New id="jotm" class="org.objectweb.jotm.Jotm">
+    <Arg type="boolean">True</Arg>
+    <Arg type="boolean">False</Arg>
+    <Call id="ut" name="getUserTransaction"/>
+    <Call id="tm" name="getTransactionManager"/>
+  </New>
+  <Call name="setAttribute">
+    <Arg>txmgr</Arg>
+    <Arg><Ref id="tm"/></Arg>
+  </Call>
+
+  <New class="org.mortbay.jetty.plus.naming.Resource">
+    <Arg>javax.transaction.TransactionManager</Arg>
+    <Arg><Ref id="ut"/></Arg>
+  </New>
+
+  <New id="tx" class="org.mortbay.jetty.plus.naming.Transaction">
+   <Arg>
+     <Ref id="ut"/>
+   </Arg>
+  </New>
+
+  <New class="org.mortbay.jetty.plus.naming.Resource">
+    <Arg>XAJiraDS</Arg>
+    <Arg>
+      <New id="myxadatasource" class="org.enhydra.jdbc.standard.StandardXADataSource">
+        <Set name="DriverName">org.hsqldb.jdbcDriver</Set>
+        <Set name="Url">jdbc:hsqldb:./database/jiradb</Set>
+        <Set name="User">sa</Set>
+        <Set name="Password"></Set>
+        <Set name="transactionManager"><Ref id="tm"/></Set>
+      </New>
+    </Arg>
+  </New>
+
+  <New id="mydatasource" class="org.mortbay.jetty.plus.naming.Resource">
+    <Arg>jdbc/JiraDS</Arg>
+    <Arg>
+      <New class="org.enhydra.jdbc.pool.StandardXAPoolDataSource">
+        <Arg><Ref id="myxadatasource"/></Arg>
+        <Set name="DataSourceName">XAJiraDS</Set>
+        <Set name="User">sa</Set>
+      </New>
+    </Arg>
+  </New>
+ END OF JOTM -->
+
+  <!-- =============================================================== -->
+  <!-- Optional Mail Session setup                                 -->
+  <!-- =============================================================== -->
+ <!--<New id="mail" class="org.mortbay.jetty.plus.naming.Resource">
+     <Arg>mail/Session</Arg>
+     <Arg>
+       <New class="org.mortbay.naming.factories.MailSessionReference">
+         <Set name="user">CHANGEME</Set>
+         <Set name="password">CHANGEME</Set>
+         <Set name="properties">
+           <New class="java.util.Properties">
+             <Put name="mail.smtp.host">CHANGEME</Put>
+             <Put name="mail.from">CHANGEME</Put>
+             <Put name="mail.debug">true</Put>
+           </New>
+          </Set>
+       </New>
+     </Arg>
+ </New>-->
+
+</Configure>
